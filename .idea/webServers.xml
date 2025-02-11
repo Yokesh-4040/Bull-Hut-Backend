@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="cad587f4-d1ce-4225-80a6-8440dcdb3bc3" name="Bull Hut" url="https://fourtyfourty.in/bull_hut/ ">
+        <fileTransfer rootFolder="/home/u293850383/public_html/bull_hut" accessType="SFTP" host="157.173.216.190" port="65002" sshConfigId="21ea89f5-fbe7-4dcf-8de0-f03ae2bd0615" sshConfig="u293850383@157.173.216.190:65002 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

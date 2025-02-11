@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lot Management Dashboard</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+<style>
+    body { background-color: #f8f9fa; padding: 20px; }
+    h2 { font-size: 2rem; }
+    .status { 
+        padding: 5px 10px; 
+        border-radius: 5px; 
+        color: #fff; 
+        font-size: 0.9rem; 
+    }
+   /* Changed to Teal */
+    .modal-content { border-radius: 10px; }
+    .table-hover tbody tr { cursor: pointer; }
+    .table-hover tbody tr:hover { background-color: #e9f7fc; }
+    .modal-footer { justify-content: space-between; }
+</style>
+
+</head>
+
+<body>
+
+    <h2 class="text-center mb-4">Lot Management Dashboard</h2>
+
+    <!-- Filter Section -->
+    <div class="form-group">
+        <label for="statusFilter">Filter by Status:</label>
+     <select id="statusFilter" class="form-control" style="max-width: 300px;" onchange="filterLots()">
+    <option value="">All</option>
+    <option value="Fabrication">Fabrication</option>
+    <option value="Dyeing">Dyeing</option>
+    <option value="Production">Production</option>
+    <option value="Packing">Packing</option>
+    <option value="Inventory">Inventory</option>
+</select>
+
+    </div>
+
+    <!-- Lots Table -->
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Lot Name</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="lotsTable">
+                <tr><td colspan="2" class="text-center">Loading lots...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Lot Details Modal -->
+    <div class="modal fade" id="lotDetailsModal" tabindex="-1" aria-labelledby="lotDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="lotDetailsModalLabel">Lot Details</h5>
+                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="lotDetails"></div>
+                <div class="modal-footer">
+                    <div id="companyAssignmentSection"></div>
+                    <div id="statusUpdateSection"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Card Modal -->
+    <div class="modal fade" id="contactCardModal" tabindex="-1" aria-labelledby="contactCardModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="contactCardModalLabel">Editor Contact Card</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="contactCardDetails"></div>
+            </div>
+        </div>
+    </div>
+<button class="btn btn-danger" onclick="logout()">Logout</button>
+
+<script>
+        function getRandomColor() {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+        return color;
+    }
+function logout() {
+    localStorage.removeItem("employee_id");
+    alert("You have been logged out.");
+    window.location.href = "login.html";  // Redirect to login page
+}
+</script>
+    <!-- JavaScript Logic -->
+    <script>
+
+        let allLots = [];
+        let selectedLotId = null;
+
+
+function renderLots(lots) {
+    console.log("Rendering Lots:", lots);  // Debugging: Check what data is being passed here
+
+    if (!lots || lots.length === 0) {
+        $("#lotsTable").html("<tr><td colspan='2' class='text-center'>No lots available.</td></tr>");
+        return;
+    }
+
+    let rows = lots.map(lot => {
+        const statusClass = lot.StatusName.replace(/\s/g, '');
+        const predefinedStatuses = ['Fabrication', 'Dyeing', 'Production', 'Packing', 'Inventory'];
+        const statusColor = predefinedStatuses.includes(statusClass) ? '' : `style="background-color: ${getRandomColor()};"`;
+        return `
+        <tr onclick="viewLot(${lot.LotID})">
+            <td>${lot.LotName}</td>
+            <td><span class="status ${statusClass}" ${statusColor}>${lot.StatusName}</span></td>
+        </tr>
+    `;
+    }).join('');
+    $("#lotsTable").html(rows);
+}
+function fetchLots() {
+    $("#statusFilter").prop('disabled', true);  // Disable dropdown while loading
+
+    $.get("https://fourtyfourty.in/bull_hut/fetch_all_lots.php", function(response) {
+        if (response.status === "success" && response.data.length > 0) {
+            allLots = response.data;
+            renderLots(allLots);
+            $("#statusFilter").prop('disabled', false);  // Enable after loading
+        } else {
+            $("#lotsTable").html("<tr><td colspan='2' class='text-center'>No lots available.</td></tr>");
+        }
+    }).fail(() => {
+        $("#lotsTable").html("<tr><td colspan='2' class='text-center'>Failed to load lots from server.</td></tr>");
+    });
+}
+
+
+function filterLots() {
+    const selectedStatus = $("#statusFilter").val();  // Get selected status from dropdown
+    console.log("Selected Status:", selectedStatus);  // Debug: Check selected status
+    console.log("All Lots Before Filtering:", allLots);  // Debug: Check data before filtering
+
+    // Filter lots based on selected status, or show all if "All" is selected
+    const filteredLots = selectedStatus 
+        ? allLots.filter(lot => lot.StatusName.toLowerCase().includes(selectedStatus.toLowerCase())) 
+        : allLots;
+
+    console.log("Filtered Lots:", filteredLots);  // Debug: Check filtered lots
+
+    // Render filtered lots or display a message if no lots match
+    if (filteredLots.length > 0) {
+        renderLots(filteredLots);
+    } else {
+        $("#lotsTable").html("<tr><td colspan='2' class='text-center'>No lots match the selected status.</td></tr>");
+    }
+}
+
+        function viewLot(lotId) {
+            selectedLotId = lotId;
+            $.ajax({
+                url: "https://fourtyfourty.in/bull_hut/fetch_lot_details.php",
+                method: "GET",
+                data: { lot_id: lotId },
+                dataType: "json",
+                success: function(response) {
+                    if (response.status === "success") {
+                        displayLotDetails(response.data);
+                        $("#lotDetailsModal").modal('show');
+                    } else {
+                        alert("❌ Error fetching lot details.");
+                    }
+                },
+                error: function(jqXHR) {
+                    console.error("Error:", jqXHR.responseText);
+                    alert("❌ Failed to fetch lot details.");
+                }
+            });
+        }
+
+        function displayLotDetails(data) {
+            const lot = data.LotDetails;
+            const historyHTML = data.EditHistory.map(h => `
+                <li>${h.Timestamp}: ${h.Action} by 
+                    <a href="#" onclick="showContactCard('${h.FirstName}', '${h.Email}', '${h.Phone}')">${h.FirstName}</a>
+                </li>
+            `).join('');
+
+            $("#lotDetails").html(`
+                <p><strong>Lot Name:</strong> ${lot.LotName}</p>
+                <p><strong>Status:</strong> ${lot.StatusName}</p>
+                <p><strong>Company:</strong> ${lot.CompanyName || 'Not Assigned'}</p>
+                <h5>Edit History:</h5>
+                <ul>${historyHTML}</ul>
+            `);
+
+            lot.CompanyID ? showChangeCompanyButton() : showAssignCompanyButton();
+            fetchStatuses(lot.StatusID);
+        }
+
+        function showAssignCompanyButton() {
+            $.get("https://fourtyfourty.in/bull_hut/fetch_companies.php", function(response) {
+                if (response.status === "success") {
+                    const options = response.data.map(c => `<option value="${c.CompanyID}">${c.CompanyName}</option>`).join('');
+                    $("#companyAssignmentSection").html(`
+                        <select id="companySelect" class="form-control">${options}</select>
+                        <button class="btn btn-primary mt-2" onclick="assignCompanyToLot()">Assign Company</button>
+                    `);
+                }
+            });
+        }
+
+        function showChangeCompanyButton() {
+            $("#companyAssignmentSection").html(`
+                <button class="btn btn-secondary" onclick="showAssignCompanyButton()">Change Company</button>
+            `);
+        }
+
+        function assignCompanyToLot() {
+            const companyId = $("#companySelect").val();
+            $.post("https://fourtyfourty.in/bull_hut/assign_company.php", { lot_id: selectedLotId, company_id: companyId }, function(response) {
+                if (response.status === "success") {
+                    alert("✅ Company assigned successfully!");
+                    fetchLots();
+                    $("#lotDetailsModal").modal('hide');
+                } else {
+                    alert("❌ Error assigning company: " + response.message);
+                }
+            }, 'json');
+        }
+
+        function fetchStatuses(currentStatusId) {
+            $.get("https://fourtyfourty.in/bull_hut/fetch_statuses.php", function(response) {
+                if (response.status === "success") {
+                    const options = response.data.map(status => 
+                        `<option value="${status.StatusID}" ${status.StatusID == currentStatusId ? "selected" : ""}>${status.StatusName}</option>`
+                    ).join('');
+                    $("#statusUpdateSection").html(`
+                        <select id="statusSelect" class="form-control">${options}</select>
+                        <button class="btn btn-warning mt-2" onclick="updateLotStatus()">Update Status</button>
+                    `);
+                }
+            });
+        }
+
+function updateLotStatus() {
+    const selectedStatusId = $("#statusSelect").val();
+    const user = JSON.parse(localStorage.getItem('user'));  // Get user info
+
+    if (!selectedStatusId || !selectedLotId || !user || !user.EmployeeID) {
+        alert("❌ Missing required fields: Make sure you're logged in.");
+        return;
+    }
+
+    $.post("https://fourtyfourty.in/bull_hut/update_lot_status.php", 
+        { 
+            lot_id: selectedLotId, 
+            status_id: selectedStatusId,
+            employee_id: user.EmployeeID  // Send Employee ID from user object
+        }, 
+        function(response) {
+            if (response.status === "success") {
+                alert("✅ Lot status updated successfully!");
+                fetchLots();
+                $("#lotDetailsModal").modal('hide');
+            } else {
+                alert("❌ Error updating status: " + response.message);
+            }
+        }, 'json'
+    ).fail(() => alert("❌ Failed to update lot status. Please try again."));
+}
+
+
+        function showContactCard(firstName, email, phone) {
+            const contactHTML = `
+                <p><strong>Name:</strong> ${firstName}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Phone:</strong> ${phone}</p>
+            `;
+            $("#contactCardDetails").html(contactHTML);
+            $("#contactCardModal").modal('show');
+        }
+        
+
+
+
+$(document).ready(function() {
+    const user = JSON.parse(localStorage.getItem('user'));  // Fetch user data from localStorage
+
+    if (!user) {
+        alert("❌ You must log in first.");
+        window.location.href = 'login.html';
+        return;
+    }
+
+    console.log(`Logged in as: ${user.FirstName} (${user.Email})`);
+    fetchLots();  // Proceed to load lots
+});
+
+
+
+// Logout Function
+function logout() {
+    localStorage.removeItem('user');  // Remove user data
+    alert("You have been logged out.");
+    window.location.href = 'login.html';
+}
+
+$('#logoutButton').click(logout);
+
+
+// Logout functionality
+function logout() {
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+}
+
+$('#logoutButton').click(logout);
+
+        $(document).ready(fetchLots);
+    </script>
+
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
