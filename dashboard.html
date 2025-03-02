@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lot Management Dashboard</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body { background-color: #f8f9fa; padding: 20px; }
+    h2 { font-size: 2rem; }
+    .status {
+      padding: 5px 10px;
+      border-radius: 5px;
+      color: #fff;
+      font-size: 0.9rem;
+    }
+    .modal-content { border-radius: 10px; }
+    .table-hover tbody tr { cursor: pointer; }
+    .table-hover tbody tr:hover { background-color: #e9f7fc; }
+    .modal-footer { justify-content: space-between; }
+    .btn-container { margin-bottom: 20px; }
+  </style>
+</head>
+
+<body>
+
+<h2 class="text-center mb-4">Lot Management Dashboard</h2>
+
+<!-- Button Container -->
+<div class="btn-container text-center">
+  <button class="btn btn-primary" onclick="window.location.href='add_lot.html'">Add New Lot</button>
+</div>
+
+<!-- Filter Section -->
+<div class="form-group">
+  <label for="statusFilter">Filter by Status:</label>
+  <select id="statusFilter" class="form-control" style="max-width: 300px;" onchange="filterLots()">
+    <option value="">All</option>
+    <option value="Fabrication">Fabrication</option>
+    <option value="Dyeing">Dyeing</option>
+    <option value="Production">Production</option>
+    <option value="Packing">Packing</option>
+    <option value="Inventory">Inventory</option>
+  </select>
+</div>
+
+<!-- Lots Table -->
+<div class="table-responsive">
+  <table class="table table-bordered table-hover">
+    <thead class="thead-dark">
+    <tr>
+      <th>Lot Name</th>
+      <th>Status</th>
+    </tr>
+    </thead>
+    <tbody id="lotsTable">
+    <tr><td colspan="2" class="text-center">Loading lots...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<button class="btn btn-danger" onclick="logout()">Logout</button>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+  const statusColors = {
+    'Fabrication': '#FF5733',
+    'Dyeing': '#33FF57',
+    'Production': '#3357FF',
+    'Packing': '#FF33A1',
+    'Inventory': '#FF8C33'
+  };
+
+  function logout() {
+    localStorage.removeItem("user");
+    alert("You have been logged out.");
+    window.location.href = "login.html";
+  }
+
+  let allLots = [];
+
+  function renderLots(lots) {
+    if (!lots || lots.length === 0) {
+      $("#lotsTable").html("<tr><td colspan='2' class='text-center'>No lots available.</td></tr>");
+      return;
+    }
+
+    let rows = lots.map(lot => {
+      const statusColor = statusColors[lot.StatusName] || '#000';
+      return `
+                <tr onclick="viewLot(${lot.LotID})">
+                    <td>${lot.LotName}</td>
+                    <td><span class="status" style="background-color: ${statusColor};">${lot.StatusName}</span></td>
+                </tr>
+            `;
+    }).join('');
+    $("#lotsTable").html(rows);
+  }
+
+  function fetchLots() {
+    $("#statusFilter").prop('disabled', true);
+
+    $.get("https://fourtyfourty.in/bull_hut/fetch_all_lots.php", function(response) {
+      if (response.status === "success" && response.data.length > 0) {
+        allLots = response.data;
+        renderLots(allLots);
+        $("#statusFilter").prop('disabled', false);
+      } else {
+        $("#lotsTable").html("<tr><td colspan='2' class='text-center'>No lots available.</td></tr>");
+      }
+    }).fail(() => {
+      $("#lotsTable").html("<tr><td colspan='2' class='text-center'>Failed to load lots from server.</td></tr>");
+    });
+  }
+
+  function filterLots() {
+    const selectedStatus = $("#statusFilter").val();
+    const filteredLots = selectedStatus
+            ? allLots.filter(lot => lot.StatusName.toLowerCase().includes(selectedStatus.toLowerCase()))
+            : allLots;
+
+    if (filteredLots.length > 0) {
+      renderLots(filteredLots);
+    } else {
+      $("#lotsTable").html("<tr><td colspan='2' class='text-center'>No lots match the selected status.</td></tr>");
+    }
+  }
+
+  function viewLot(lotId) {
+    window.location.href = `lot-details.html?lotId=${lotId}`;
+  }
+
+  $(document).ready(function() {
+    const user = JSON.parse(localStorage.getItem('user'));
+
+    if (!user) {
+      alert("❌ You must log in first.");
+      window.location.href = 'login.html';
+      return;
+    }
+
+    fetchLots();
+  });
+</script>
+</body>
+</html>

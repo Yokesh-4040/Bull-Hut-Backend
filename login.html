@@ -35,107 +35,66 @@
 </head>
 <body>
 
-    <div class="login-container">
-        <h2>Login</h2>
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="email">Email address:</label>
-                <input type="email" class="form-control" id="email" placeholder="Enter email" required>
-            </div>
+<div class="login-container">
+    <h2>Login</h2>
+    <form id="loginForm">
+        <div class="form-group">
+            <label for="email">Email address:</label>
+            <input type="email" class="form-control" id="email" placeholder="Enter email" required>
+        </div>
 
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" class="form-control" id="password" placeholder="Enter password" required>
-            </div>
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" class="form-control" id="password" placeholder="Enter password" required>
+        </div>
 
-            <button type="submit" class="btn btn-primary">Login</button>
-        </form>
+        <button type="submit" class="btn btn-primary">Login</button>
+    </form>
 
-        <div id="loginFeedback" class="mt-3 text-center"></div>
-    </div>
+    <div id="loginFeedback" class="mt-3 text-center"></div>
+</div>
 
-    <!-- jQuery and Bootstrap JS -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<!-- jQuery and Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
-    <script>
-        $(document).ready(function() {
-            $('#loginForm').submit(function(e) {
-                e.preventDefault();  // Prevent the default form submission
+<script>
+    $(document).ready(function() {
+        $('#loginForm').submit(function(e) {
+            e.preventDefault();  // Prevent the default form submission
 
-                const email = $('#email').val().trim();
-                const password = $('#password').val().trim();
+            const email = $('#email').val().trim();
+            const password = $('#password').val().trim();
 
-                // Clear previous feedback
-                $('#loginFeedback').html('');
+            // Clear previous feedback
+            $('#loginFeedback').html('');
 
-                $.ajax({
-    url: 'https://fourtyfourty.in/bull_hut/login.php',
-    type: 'POST',
-    data: { email: email, password: password },
-    dataType: 'json',
-    success: function(response) {
-        
-        
-        
-        
-        
-        
-        
-        
-        if (response.status === 'success') {
-            // Store user info in localStorage
-            localStorage.setItem('user', JSON.stringify(response.user));
+            $.ajax({
+                url: 'https://fourtyfourty.in/bull_hut/login.php',
+                type: 'POST',
+                data: { email: email, password: password },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.status === 'success') {
+                        // Store user info in localStorage
+                        localStorage.setItem('user', JSON.stringify(response.user));
 
-            $('#loginFeedback').html('<div class="alert alert-success">✅ Login successful! Redirecting...</div>');
+                        $('#loginFeedback').html('<div class="alert alert-success">✅ Login successful! Redirecting...</div>');
 
-            setTimeout(function() {
-                window.location.href = 'index.html';  // Redirect to dashboard
-            }, 1500);
-        } else {
-            $('#loginFeedback').html('<div class="alert alert-danger">❌ Invalid credentials. Please try again.</div>');
-        }
-    },
-    error: function() {
-        $('#loginFeedback').html('<div class="alert alert-danger">❌ Server error. Please try again later.</div>');
-    }
-});
-
-            });
-        });
-
-        $(document).ready(function() {
-            const user = JSON.parse(localStorage.getItem('user'));
-
-            if (!user) {
-                alert("❌ You must log in first.");
-                window.location.href = 'login.html';
-                return;
-            }
-
-            console.log(`Logged in as: ${user.FirstName} (${user.Email})`);
-            fetchLots();
-        });
-
-        function fetchLots() {
-            $("#statusFilter").prop('disabled', true);
-            $("#lotsTable").html("<tr><td colspan='2' class='text-center'>Loading lots...</td></tr>");
-
-            $.get("https://fourtyfourty.in/bull_hut/fetch_all_lots.php", function(response) {
-                if (response.status === "success" && response.data.length > 0) {
-                    allLots = response.data;
-                    renderLots(allLots);
-                } else {
-                    $("#lotsTable").html("<tr><td colspan='2' class='text-center'>No lots available.</td></tr>");
+                        setTimeout(function() {
+                            window.location.href = 'dashboard.html';  // Redirect to dashboard
+                        }, 1500);
+                    } else {
+                        $('#loginFeedback').html('<div class="alert alert-danger">❌ Invalid credentials. Please try again.</div>');
+                    }
+                },
+                error: function() {
+                    $('#loginFeedback').html('<div class="alert alert-danger">❌ Server error. Please try again later.</div>');
                 }
-                $("#statusFilter").prop('disabled', false);
-            }).fail(() => {
-                $("#lotsTable").html("<tr><td colspan='2' class='text-center'>Failed to load lots from server.</td></tr>");
             });
-        }
-
-        // Other functions remain unchanged...
-    </script>
+        });
+    });
+</script>
 
 </body>
 </html>

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lot Details</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body { background-color: #f8f9fa; padding: 20px; }
+    .modal-content { border-radius: 10px; }
+    .btn { margin-top: 10px; }
+  </style>
+</head>
+
+<body>
+
+<h2 class="text-center mb-4">Lot Details</h2>
+
+<div id="lotDetails" class="mb-4"></div>
+
+<div id="companyAssignmentSection" class="mb-4"></div>
+<div id="statusUpdateSection" class="mb-4"></div>
+
+<button class="btn btn-secondary" onclick="goBack()">Back to Dashboard</button>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script>
+  function goBack() {
+    window.history.back();
+  }
+
+  function getLotIdFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('lotId');
+  }
+
+  function fetchLotDetails(lotId) {
+    $.ajax({
+      url: "https://fourtyfourty.in/bull_hut/fetch_lot_details.php",
+      method: "GET",
+      data: { lot_id: lotId },
+      dataType: "json",
+      success: function(response) {
+        if (response.status === "success") {
+          displayLotDetails(response.data);
+        } else {
+          alert("❌ Error fetching lot details.");
+        }
+      },
+      error: function(jqXHR) {
+        console.error("Error:", jqXHR.responseText);
+        alert("❌ Failed to fetch lot details.");
+      }
+    });
+  }
+
+  function displayLotDetails(data) {
+    const lot = data.LotDetails;
+    const historyHTML = data.EditHistory.map(h => `
+                <li>${h.Timestamp}: ${h.Action} by
+                    <a href="#" onclick="showContactCard('${h.FirstName}', '${h.Email}', '${h.Phone}')">${h.FirstName}</a>
+                </li>
+            `).join('');
+
+    $("#lotDetails").html(`
+                <p><strong>Lot Name:</strong> ${lot.LotName}</p>
+                <p><strong>Status:</strong> ${lot.StatusName}</p>
+                <p><strong>Company:</strong> ${lot.CompanyName || 'Not Assigned'}</p>
+                <h5>Edit History:</h5>
+                <ul>${historyHTML}</ul>
+            `);
+
+    lot.CompanyID ? showChangeCompanyButton() : showAssignCompanyButton();
+    fetchStatuses(lot.StatusID);
+  }
+
+  function showAssignCompanyButton() {
+    $.get("https://fourtyfourty.in/bull_hut/fetch_companies.php", function(response) {
+      if (response.status === "success") {
+        const options = response.data.map(c => `<option value="${c.CompanyID}">${c.CompanyName}</option>`).join('');
+        $("#companyAssignmentSection").html(`
+                        <select id="companySelect" class="form-control">${options}</select>
+                        <button class="btn btn-primary mt-2" onclick="assignCompanyToLot()">Assign Company</button>
+                    `);
+      }
+    });
+  }
+
+  function showChangeCompanyButton() {
+    $("#companyAssignmentSection").html(`
+                <button class="btn btn-warning" onclick="showAssignCompanyButton()">Change Company</button>
+            `);
+  }
+
+  function assignCompanyToLot() {
+    const companyId = $("#companySelect").val();
+    $.ajax({
+      url: "https://fourtyfourty.in/bull_hut/assign_company.php",
+      method: "POST",
+      data: { lot_id: selectedLotId, company_id: companyId },
+      success: function(response) {
+        if (response.status === "success") {
+          alert("✅ Company assigned successfully.");
+          fetchLotDetails(selectedLotId);
+        } else {
+          alert("❌ Error assigning company.");
+        }
+      },
+      error: function(jqXHR) {
+        console.error("Error:", jqXHR.responseText);
+        alert("❌ Failed to assign company.");
+      }
+    });
+  }
+
+  function fetchStatuses(currentStatusId) {
+    $.get("https://fourtyfourty.in/bull_hut/fetch_statuses.php", function(response) {
+      if (response.status === "success") {
+        const options = response.data.map(s => `<option value="${s.StatusID}" ${s.StatusID === currentStatusId ? 'selected' : ''}>${s.StatusName}</option>`).join('');
+        $("#statusUpdateSection").html(`
+                        <select id="statusSelect" class="form-control">${options}</select>
+                        <button class="btn btn-success mt-2" onclick="updateLotStatus()">Update Status</button>
+                    `);
+      }
+    });
+  }
+
+  function updateLotStatus() {
+    const statusId = $("#statusSelect").val();
+    const user = JSON.parse(localStorage.getItem('user'));
+    const employeeId = user ? user.EmployeeID : null; // Retrieve employee ID
+
+    if (!employeeId) {
+      alert("❌ Employee ID not found. Please log in again.");
+      window.location.href = 'login.html';
+      return;
+    }
+
+    $.ajax({
+      url: "https://fourtyfourty.in/bull_hut/update_lot_status.php",
+      method: "POST",
+      data: {
+        lot_id: selectedLotId,
+        status_id: statusId,
+        employee_id: employeeId
+      },
+      success: function(response) {
+        if (response.status === "success") {
+          alert("✅ Status updated successfully.");
+          fetchLotDetails(selectedLotId);
+        } else {
+          alert(`❌ Error updating status: ${response.message}`);
+        }
+      },
+      error: function(jqXHR) {
+        console.error("Error:", jqXHR.responseText);
+        alert("❌ Failed to update status.");
+      }
+    });
+  }
+
+
+  function showContactCard(firstName, email, phone) {
+    alert(`Name: ${firstName}\nEmail: ${email}\nPhone: ${phone}`);
+  }
+
+  let selectedLotId = null;
+
+  $(document).ready(function() {
+    selectedLotId = getLotIdFromUrl();
+    if (selectedLotId) {
+      fetchLotDetails(selectedLotId);
+    } else {
+      alert("❌ Invalid lot ID.");
+      goBack();
+    }
+  });
+</script>
+</body>
+</html>

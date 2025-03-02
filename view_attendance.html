@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View Attendance</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background-color: #007bff;
+      color: #fff;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+    .back-button {
+      display: block;
+      margin: 20px auto;
+      padding: 10px 20px;
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      text-align: center;
+      text-decoration: none;
+    }
+    .back-button:hover {
+      background-color: #218838;
+    }
+    .loading {
+      text-align: center;
+      font-size: 18px;
+      color: #555;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Employee Attendance Records</h1>
+  <div class="loading" id="loading">Loading attendance data...</div>
+  <table id="attendance-table" style="display: none;">
+    <thead>
+    <tr>
+      <th>Attendance ID</th>
+      <th>Employee Name</th>
+      <th>Check-In Time</th>
+      <th>Check-Out Time</th>
+      <th>Date</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- Attendance data will be populated here -->
+    </tbody>
+  </table>
+  <a href="attandance_dashboard.html" class="back-button">Back to Dashboard</a>
+</div>
+
+<script>
+  // Fetch attendance data from the server
+  fetch('view_attendance.php')
+          .then(response => response.json())
+          .then(data => {
+            const tableBody = document.querySelector('#attendance-table tbody');
+            const loading = document.getElementById('loading');
+            const table = document.getElementById('attendance-table');
+
+            if (data.status === 'success' && data.data) {
+              // Hide loading message and show the table
+              loading.style.display = 'none';
+              table.style.display = 'table';
+
+              // Populate the table with attendance data
+              data.data.forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                            <td>${record.AttendanceID}</td>
+                            <td>${record.FirstName} ${record.LastName}</td>
+                            <td>${record.CheckInTime || 'N/A'}</td>
+                            <td>${record.CheckOutTime || 'N/A'}</td>
+                            <td>${record.Date}</td>
+                        `;
+                tableBody.appendChild(row);
+              });
+            } else {
+              // Show a message if no records are found
+              loading.textContent = data.message || 'No attendance records found.';
+            }
+          })
+          .catch(error => {
+            console.error('Error fetching attendance data:', error);
+            document.getElementById('loading').textContent = 'Failed to load attendance data. Please try again later.';
+          });
+</script>
+</body>
+</html>

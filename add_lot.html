@@ -23,93 +23,97 @@
             text-align: center;
             margin-bottom: 20px;
         }
-        .btn-primary {
+        .btn-primary, .btn-secondary {
             width: 100%;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>Add New Lot</h2>
+<div class="container">
+    <h2>Add New Lot</h2>
 
-        <!-- Lot Name -->
-        <div class="form-group">
-            <label for="lotName">Lot Name:</label>
-            <input type="text" id="lotName" class="form-control" placeholder="Enter lot name" required>
-        </div>
-
-        <!-- Number of Rolls -->
-        <div class="form-group">
-            <label for="numberOfRolls">Number of Rolls:</label>
-            <input type="number" id="numberOfRolls" class="form-control" placeholder="Enter number of rolls" required>
-        </div>
-
-        <!-- Editor ID -->
-        <div class="form-group">
-            <label for="editorId">Editor ID:</label>
-            <input type="number" id="editorId" class="form-control" placeholder="Enter your ID" required>
-        </div>
-
-        <!-- Optional Company ID -->
-        <div class="form-group">
-            <label for="companyId">Company ID (Optional):</label>
-            <input type="number" id="companyId" class="form-control" placeholder="Enter company ID if assigning now">
-        </div>
-
-        <!-- Submit Button -->
-        <button class="btn btn-primary" onclick="addLot()">Add Lot</button>
-
-        <!-- Status Message -->
-        <div id="statusMessage" class="mt-3 text-center"></div>
+    <!-- Lot Name -->
+    <div class="form-group">
+        <label for="lotName">Lot Name:</label>
+        <input type="text" id="lotName" class="form-control" placeholder="Enter lot name" required>
     </div>
 
-    <script>
-        function addLot() {
-            const lotName = $("#lotName").val().trim();
-            const numberOfRolls = $("#numberOfRolls").val();
-            const editorId = $("#editorId").val();
-            const companyId = $("#companyId").val();
+    <!-- Number of Rolls -->
+    <div class="form-group">
+        <label for="numberOfRolls">Number of Rolls:</label>
+        <input type="number" id="numberOfRolls" class="form-control" placeholder="Enter number of rolls" required>
+    </div>
 
-            if (!lotName || !numberOfRolls || !editorId) {
-                $("#statusMessage").html('<div class="alert alert-danger">Please fill in all required fields.</div>');
-                return;
-            }
+    <!-- Editor ID -->
+    <div class="form-group">
+        <label for="editorId">Editor ID:</label>
+        <input type="number" id="editorId" class="form-control" placeholder="Enter your ID" required>
+    </div>
 
-            $.ajax({
-                url: "https://fourtyfourty.in/bull_hut/add_lot.php",
-                type: "POST",
-                data: {
-                    lot_name: lotName,
-                    number_of_rolls: numberOfRolls,
-                    editor_id: editorId,
-                    company_id: companyId  // Optional field
-                },
-                dataType: "json",
-                success: function(response) {
-                    if (response.status === "success") {
-                        $("#statusMessage").html('<div class="alert alert-success">' + response.message + '</div>');
-                        clearForm();
-                    } else {
-                        $("#statusMessage").html('<div class="alert alert-danger">❌ ' + response.message + '</div>');
-                    }
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    console.error("AJAX Request Failed:", textStatus, errorThrown);
-                    console.log("Server Response:", jqXHR.responseText);  // Debug server response
-                    $("#statusMessage").html('<div class="alert alert-danger">❌ Failed to add lot. Check console for details.</div>');
+    <!-- Optional Company ID -->
+    <div class="form-group">
+        <label for="companyId">Company ID (Optional):</label>
+        <input type="number" id="companyId" class="form-control" placeholder="Enter company ID if assigning now">
+    </div>
+
+    <!-- Submit Button -->
+    <button class="btn btn-primary" onclick="addLot()">Add Lot</button>
+
+    <!-- Back to Dashboard Button -->
+    <button class="btn btn-secondary" onclick="window.location.href='dashboard.html'">Back to Dashboard</button>
+
+    <!-- Status Message -->
+    <div id="statusMessage" class="mt-3 text-center"></div>
+</div>
+
+<script>
+    function addLot() {
+        const lotName = $("#lotName").val().trim();
+        const numberOfRolls = $("#numberOfRolls").val();
+        const editorId = $("#editorId").val();
+        const companyId = $("#companyId").val();
+
+        if (!lotName || !numberOfRolls || !editorId) {
+            $("#statusMessage").html('<div class="alert alert-danger">Please fill in all required fields.</div>');
+            return;
+        }
+
+        $.ajax({
+            url: "https://fourtyfourty.in/bull_hut/add_lot.php",
+            type: "POST",
+            data: {
+                lot_name: lotName,
+                number_of_rolls: numberOfRolls,
+                editor_id: editorId,
+                company_id: companyId  // Optional field
+            },
+            dataType: "json",
+            success: function(response) {
+                if (response.status === "success") {
+                    $("#statusMessage").html('<div class="alert alert-success">' + response.message + '</div>');
+                    clearForm();
+                } else {
+                    $("#statusMessage").html('<div class="alert alert-danger">❌ ' + response.message + '</div>');
                 }
-            });
-        }
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.error("AJAX Request Failed:", textStatus, errorThrown);
+                console.log("Server Response:", jqXHR.responseText);  // Debug server response
+                $("#statusMessage").html('<div class="alert alert-danger">❌ Failed to add lot. Check console for details.</div>');
+            }
+        });
+    }
 
-        function clearForm() {
-            $("#lotName").val('');
-            $("#numberOfRolls").val('');
-            $("#editorId").val('');
-            $("#companyId").val('');
-        }
-    </script>
+    function clearForm() {
+        $("#lotName").val('');
+        $("#numberOfRolls").val('');
+        $("#editorId").val('');
+        $("#companyId").val('');
+    }
+</script>
 
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

@@ -13,7 +13,7 @@ if (isset($_POST['lot_name'], $_POST['number_of_rolls'], $_POST['editor_id'])) {
     $company_id = isset($_POST['company_id']) ? intval($_POST['company_id']) : null;
 
     // Insert the new lot into the lots table
-    $stmt = $conn->prepare("INSERT INTO lots (LotName, NumberOfRolls, CompanyID) VALUES (?, ?, ?)");
+    $stmt = $inventory_conn->prepare("INSERT INTO lots (LotName, NumberOfRolls, CompanyID) VALUES (?, ?, ?)");
     $stmt->bind_param("sii", $lot_name, $number_of_rolls, $company_id);
 
     if ($stmt->execute()) {
@@ -21,7 +21,7 @@ if (isset($_POST['lot_name'], $_POST['number_of_rolls'], $_POST['editor_id'])) {
 
         // Log the lot addition to rolls_inventory_history
         $action = "Added new lot: $lot_name with $number_of_rolls rolls";
-        $logStmt = $conn->prepare("INSERT INTO rolls_inventory_history (EditorID, LotID, Action) VALUES (?, ?, ?)");
+        $logStmt = $inventory_conn->prepare("INSERT INTO rolls_inventory_history (EditorID, LotID, Action) VALUES (?, ?, ?)");
         $logStmt->bind_param("iis", $editor_id, $lot_id, $action);
 
         if ($logStmt->execute()) {
@@ -40,5 +40,5 @@ if (isset($_POST['lot_name'], $_POST['number_of_rolls'], $_POST['editor_id'])) {
     echo json_encode(["status" => "error", "message" => "Required fields are missing."]);
 }
 
-$conn->close();
+$inventory_conn->close();
 ?>

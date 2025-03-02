@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Attendance Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .dashboard {
+      max-width: 1200px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .dashboard h1 {
+      text-align: center;
+      color: #333;
+    }
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 30px;
+    }
+    .stat-box {
+      background-color: #007bff;
+      color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      width: 200px;
+    }
+    .stat-box h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .stat-box p {
+      margin: 5px 0 0;
+      font-size: 16px;
+    }
+    .actions {
+      margin-top: 50px;
+      text-align: center;
+    }
+    .actions button {
+      background-color: #28a745;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 0 10px;
+    }
+    .actions button:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+<div class="dashboard">
+  <h1>Employee Attendance Dashboard</h1>
+  <div class="stats">
+    <div class="stat-box">
+      <h2 id="employee-count">0</h2>
+      <p>Employees</p>
+    </div>
+    <div class="stat-box">
+      <h2 id="lot-count">0</h2>
+      <p>Lots Inside</p>
+    </div>
+  </div>
+  <div class="actions">
+    <button onclick="manageEmployees()">Manage Employees</button>
+    <button onclick="viewAttendance()">View Attendance</button>
+  </div>
+</div>
+
+<script>
+  // Fetch and display the number of employees and lots inside
+  fetch('get_employee_count.php')
+          .then(response => response.json())
+          .then(data => {
+            document.getElementById('employee-count').textContent = data.count;
+          });
+
+  fetch('get_lot_count.php')
+          .then(response => response.json())
+          .then(data => {
+            document.getElementById('lot-count').textContent = data.count;
+          });
+
+  function manageEmployees() {
+    window.location.href = 'manage_employees.html';
+  }
+
+  function viewAttendance() {
+    window.location.href = 'view_attendance.html';
+  }
+</script>
+</body>
+</html>

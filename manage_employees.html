@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manage Employees</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f4f4f9;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .add-button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    .form-container {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 5px;
+    }
+
+    .form-container.visible {
+      display: block;
+      animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+
+    .actions button {
+      padding: 5px 10px;
+      margin: 2px;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .edit { background: #ffc107; }
+    .remove { background: #dc3545; color: white; }
+
+    .form-buttons {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+    }
+
+    #submit-button { background: #28a745; color: white; }
+    .cancel-button { background: #6c757d; color: white; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>Manage Employees</h1>
+  <button class="add-button" id="toggle-form-button">Add New Employee</button>
+
+  <div class="form-container" id="employee-form-container">
+    <h2>Add/Edit Employee</h2>
+    <form id="employee-form">
+      <input type="hidden" id="employee-id">
+      <div>
+        <label>First Name:</label>
+        <input type="text" id="first-name" required>
+      </div>
+      <div>
+        <label>Last Name:</label>
+        <input type="text" id="last-name" required>
+      </div>
+      <div>
+        <label>Email:</label>
+        <input type="email" id="email" required>
+      </div>
+      <div>
+        <label>Phone:</label>
+        <input type="tel" id="phone" required>
+      </div>
+      <div>
+        <label>Company:</label>
+        <select id="company" required></select>
+      </div>
+      <div>
+        <label>Role:</label>
+        <select id="role" required></select>
+      </div>
+      <div class="form-buttons">
+        <button type="submit" id="submit-button">Add Employee</button>
+        <button type="button" id="cancel-button" class="cancel-button">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="loading">Loading employees...</div>
+  <table id="employee-table" style="display: none;">
+    <thead>
+    <tr>
+      <th>ID</th>
+      <th>First Name</th>
+      <th>Last Name</th>
+      <th>Email</th>
+      <th>Phone</th>
+      <th>Company</th>
+      <th>Role</th>
+      <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const formContainer = document.getElementById('employee-form-container');
+    const employeeForm = document.getElementById('employee-form');
+    const toggleFormBtn = document.getElementById('toggle-form-button');
+    const cancelBtn = document.getElementById('cancel-button');
+    const companySelect = document.getElementById('company');
+    const roleSelect = document.getElementById('role');
+
+    // Load initial data
+    Promise.all([
+      fetch('get_companies_and_roles.php').then(res => res.json()),
+      fetch('get_employees.php').then(res => res.json())
+    ]).then(([companiesData, employeesData]) => {
+      // Populate dropdowns
+      companiesData.companies.forEach(company => {
+        const option = document.createElement('option');
+        option.value = company.CompanyID;
+        option.textContent = company.CompanyName;
+        companySelect.appendChild(option);
+      });
+
+      companiesData.roles.forEach(role => {
+        const option = document.createElement('option');
+        option.value = role.RoleID;
+        option.textContent = role.RoleName;
+        roleSelect.appendChild(option);
+      });
+
+      // Populate employee table
+      const tbody = document.querySelector('#employee-table tbody');
+      employeesData.data.forEach(employee => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+  <td>${employee.EmployeeID}</td>
+  <td>${employee.FirstName}</td>
+  <td>${employee.LastName}</td>
+  <td>${employee.Email}</td>
+  <td>${employee.Phone}</td>
+  <td data-company-id="${employee.CompanyID}">${employee.CompanyName}</td>
+  <td data-role-id="${employee.RoleID}">${employee.RoleName}</td>
+  <td>
+    <button class="edit" onclick="editEmployee(${employee.EmployeeID})">Edit</button>
+    <button class="remove" onclick="deleteEmployee(${employee.EmployeeID})">Delete</button>
+  </td>
+`;
+        tbody.appendChild(row);
+      });
+
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('employee-table').style.display = 'table';
+    });
+
+    // Form toggle
+    toggleFormBtn.addEventListener('click', () => {
+      formContainer.classList.toggle('visible');
+    });
+
+    // Cancel button
+    cancelBtn.addEventListener('click', () => {
+      employeeForm.reset();
+      formContainer.classList.remove('visible');
+      document.getElementById('employee-id').value = '';
+      document.getElementById('submit-button').textContent = 'Add Employee';
+    });
+
+    // Form submission
+    employeeForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = {
+        id: document.getElementById('employee-id').value,
+        firstName: document.getElementById('first-name').value,
+        lastName: document.getElementById('last-name').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        companyId: document.getElementById('company').value,
+        roleId: document.getElementById('role').value
+      };
+
+      const url = formData.id ? 'update_employee.php' : 'add_employee.php';
+      const method = formData.id ? 'PUT' : 'POST';
+
+      try {
+        const response = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          window.location.reload();
+        } else {
+          alert(result.message || 'Error occurred');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Request failed');
+      }
+    });
+  });
+
+  function editEmployee(id) {
+    const row = document.querySelector(`tr:has(button[onclick="editEmployee(${id})"])`);
+
+    // Get CompanyID and RoleID from data attributes
+    const companyId = row.cells[5].getAttribute('data-company-id');
+    const roleId = row.cells[6].getAttribute('data-role-id');
+
+    // Populate form fields
+    document.getElementById('employee-id').value = id;
+    document.getElementById('first-name').value = row.cells[1].textContent;
+    document.getElementById('last-name').value = row.cells[2].textContent;
+    document.getElementById('email').value = row.cells[3].textContent;
+    document.getElementById('phone').value = row.cells[4].textContent;
+    document.getElementById('company').value = companyId;  // Use data attribute
+    document.getElementById('role').value = roleId;        // Use data attribute
+
+    // Show form
+    document.getElementById('submit-button').textContent = 'Update Employee';
+    document.getElementById('employee-form-container').classList.add('visible');
+  }
+
+  // Change DELETE request to POST (to match PHP):
+  async function deleteEmployee(id) {
+    await fetch('remove_employee.php', {
+      method: 'POST',  // Changed from DELETE
+      body: JSON.stringify({ id })
+    });
+  }
+
+</script>
+<a href="dashboard.html" class="back-button">Back to Dashboard</a>
+
+</body>
+</html>
